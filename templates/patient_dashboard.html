@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAI – Patient Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #94a3b8;
+            --sidebar-active: #3b82f6;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --chat-bg: #f8fafc;
+            --ai-bubble: #ffffff;
+            --user-bubble: #3b82f6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 260px; min-width: 260px; background: var(--sidebar-bg);
+            display: flex; flex-direction: column; padding: 0; overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 24px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.07);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .sidebar-brand .logo-icon {
+            width: 36px; height: 36px; background: var(--primary); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px;
+        }
+        .sidebar-brand span { color: #fff; font-weight: 700; font-size: 1.1rem; }
+        .sidebar-brand small { color: var(--sidebar-text); font-size: 0.7rem; display: block; }
+        .sidebar-nav { flex: 1; padding: 16px 12px; }
+        .nav-item-btn {
+            display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+            border-radius: 10px; color: var(--sidebar-text); font-size: 0.875rem;
+            font-weight: 500; cursor: pointer; border: none; background: none;
+            width: 100%; text-align: left; transition: all 0.2s; margin-bottom: 4px;
+        }
+        .nav-item-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .nav-item-btn.active { background: rgba(59,130,246,0.15); color: var(--primary); }
+        .nav-item-btn i { width: 18px; text-align: center; font-size: 0.9rem; }
+        .sidebar-footer { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.07); }
+        .user-card { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.05); }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.85rem; }
+        .user-name { color: #fff; font-size: 0.85rem; font-weight: 600; }
+        .user-role { color: var(--sidebar-text); font-size: 0.72rem; }
+
+        /* ── Main Layout ── */
+        .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .topbar {
+            padding: 14px 24px; background: var(--card-bg); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .topbar h1 { font-size: 1.1rem; font-weight: 700; }
+        .content-area { flex: 1; overflow-y: auto; padding: 24px; }
+
+        /* ── Cards ── */
+        .card-box { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); padding: 24px; }
+
+        /* ── Language Selector ── */
+        .lang-setup { max-width: 520px; margin: 0 auto; text-align: center; padding-top: 32px; }
+        .lang-setup h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
+        .lang-setup p { color: var(--muted); margin-bottom: 24px; }
+        .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+        .lang-btn {
+            padding: 14px 10px; border: 2px solid var(--border); border-radius: 12px;
+            background: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+            color: var(--text); transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px;
+        }
+        .lang-btn .flag { font-size: 1.6rem; }
+        .lang-btn:hover, .lang-btn.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+        .btn-start-chat {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff; border: none; padding: 14px 40px; border-radius: 12px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+        }
+        .btn-start-chat:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.45); }
+
+        /* ── Chat UI ── */
+        .chat-wrapper { display: flex; flex-direction: column; height: calc(100vh - 112px); }
+        .chat-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; background: var(--card-bg); border-radius: 16px 16px 0 0;
+            border: 1px solid var(--border); border-bottom: none;
+        }
+        .chat-header .ai-info { display: flex; align-items: center; gap: 12px; }
+        .ai-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; }
+        .online-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; border: 2px solid #fff; position: absolute; bottom: 0; right: 0; }
+        .lang-badge { padding: 4px 10px; background: var(--primary-light); color: var(--primary); border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 20px; background: var(--chat-bg);
+            border: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px;
+        }
+        .msg-row { display: flex; gap: 10px; animation: fadeUp 0.3s ease; }
+        .msg-row.user { flex-direction: row-reverse; }
+        @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .msg-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; }
+        .msg-avatar.ai { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; }
+        .msg-avatar.user { background: var(--primary); color: #fff; }
+        .bubble {
+            max-width: 72%; padding: 12px 16px; border-radius: 16px;
+            font-size: 0.9rem; line-height: 1.6; position: relative;
+        }
+        .bubble.ai { background: var(--ai-bubble); border: 1px solid var(--border); border-radius: 4px 16px 16px 16px; color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .bubble.user { background: var(--user-bubble); color: #fff; border-radius: 16px 4px 16px 16px; }
+        .bubble-time { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+        .msg-row.user .bubble-time { text-align: right; }
+
+        /* Typing indicator */
+        .typing-bubble { background: var(--ai-bubble); border: 1px solid var(--border); padding: 12px 16px; border-radius: 4px 16px 16px 16px; display: inline-flex; gap: 5px; align-items: center; }
+        .typing-bubble span { width: 7px; height: 7px; background: var(--muted); border-radius: 50%; animation: bounce 1.2s infinite; }
+        .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+        .chat-input-area {
+            padding: 14px 16px; background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 0 0 16px 16px; display: flex; gap: 10px; align-items: flex-end;
+        }
+        .chat-input {
+            flex: 1; border: 1.5px solid var(--border); border-radius: 12px; padding: 12px 16px;
+            font-size: 0.9rem; resize: none; outline: none; font-family: 'Inter', sans-serif;
+            max-height: 120px; transition: border-color 0.2s;
+        }
+        .chat-input:focus { border-color: var(--primary); }
+        .btn-send {
+            width: 44px; height: 44px; border-radius: 12px; background: var(--primary);
+            border: none; color: #fff; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-size: 1rem; transition: all 0.2s; flex-shrink: 0;
+        }
+        .btn-send:hover { background: var(--primary-dark); transform: scale(1.05); }
+        .btn-send:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+
+        /* ── Report & Doctor Cards ── */
+        .result-section { animation: fadeUp 0.5s ease; }
+        .severity-badge { padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+        .severity-normal { background: #dcfce7; color: #15803d; }
+        .severity-moderate { background: #fef9c3; color: #a16207; }
+        .severity-critical { background: #fee2e2; color: #b91c1c; }
+
+        .report-card { border-left: 4px solid var(--primary); background: var(--primary-light); border-radius: 12px; padding: 20px; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.8; }
+        .doctor-contact-card {
+            border: 2px solid #f59e0b; border-radius: 16px; padding: 22px;
+            background: linear-gradient(135deg, #fffbeb, #fff8ec);
+        }
+        .doctor-contact-card h4 { color: #92400e; font-weight: 700; }
+        .contact-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+        .btn-call { background: #10b981; color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.2s; }
+        .btn-call:hover { background: #059669; color: #fff; transform: translateY(-1px); }
+        .btn-video { background: #3b82f6; color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.2s; }
+        .btn-video:hover { background: #1d4ed8; color: #fff; transform: translateY(-1px); }
+        .btn-email { background: #8b5cf6; color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.2s; }
+        .btn-email:hover { background: #7c3aed; color: #fff; transform: translateY(-1px); }
+
+        /* ── History & Appointments ── */
+        .report-history-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; transition: box-shadow 0.2s; }
+        .report-history-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+        /* ── Utilities ── */
+        .section-hidden { display: none !important; }
+        .loading-spinner { display: flex; justify-content: center; padding: 40px; }
+        .audio-player { margin-top: 12px; width: 100%; }
+        .new-chat-btn { background: var(--primary); color: #fff; border: none; padding: 10px 22px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .new-chat-btn:hover { background: var(--primary-dark); }
+    </style>
+</head>
+<body>
+<!-- ══════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════ -->
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <div class="logo-icon"><i class="fas fa-heartbeat"></i></div>
+        <div>
+            <span>MedAI</span>
+            <small>Patient Portal</small>
+        </div>
+    </div>
+    <div class="sidebar-nav">
+        <button class="nav-item-btn active" id="nav-triage" onclick="showSection('triage')">
+            <i class="fas fa-comments"></i> AI Consultation
+        </button>
+        <button class="nav-item-btn" id="nav-history" onclick="showSection('history')">
+            <i class="fas fa-history"></i> Medical History
+        </button>
+        <a href="/appointment.html" class="nav-item-btn" style="text-decoration:none;">
+            <i class="fas fa-calendar-check"></i> Appointments
+        </a>
+        <a href="/find_doctors.html" class="nav-item-btn" style="text-decoration:none;">
+            <i class="fas fa-user-md"></i> Find Doctors
+        </a>
+    </div>
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="avatar" id="sidebarAvatar">P</div>
+            <div>
+                <div class="user-name" id="sidebarName">Patient</div>
+                <div class="user-role">Patient Portal</div>
+            </div>
+        </div>
+        <button class="nav-item-btn mt-2" style="color:#ef4444;" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     MAIN AREA
+════════════════════════════════════════════════ -->
+<div class="main-area">
+    <div class="topbar">
+        <h1 id="sectionTitle"><i class="fas fa-comments me-2 text-primary"></i>AI Consultation</h1>
+        <button class="new-chat-btn" id="newChatBtn" onclick="resetToLanguageSelect()" style="display:none;">
+            <i class="fas fa-plus"></i> New Consultation
+        </button>
+    </div>
+
+    <div class="content-area">
+
+        <!-- ── TRIAGE SECTION ── -->
+        <div id="section-triage">
+
+            <!-- Step 1: Language Selection -->
+            <div id="lang-setup" class="lang-setup">
+                <div style="font-size: 3rem; margin-bottom: 12px;">🩺</div>
+                <h2>Start Your AI Consultation</h2>
+                <p>Please choose your preferred language. Our AI doctor will communicate with you in that language.</p>
+                <div class="lang-grid">
+                    <div class="lang-btn selected" data-lang="English" onclick="selectLang(this)">
+                        <span class="flag">🇬🇧</span> English
+                    </div>
+                    <div class="lang-btn" data-lang="Hindi" onclick="selectLang(this)">
+                        <span class="flag">🇮🇳</span> हिंदी
+                    </div>
+                    <div class="lang-btn" data-lang="Telugu" onclick="selectLang(this)">
+                        <span class="flag">🇮🇳</span> తెలుగు
+                    </div>
+                    <div class="lang-btn" data-lang="Marathi" onclick="selectLang(this)">
+                        <span class="flag">🇮🇳</span> मराठी
+                    </div>
+                    <div class="lang-btn" data-lang="Tamil" onclick="selectLang(this)">
+                        <span class="flag">🇮🇳</span> தமிழ்
+                    </div>
+                    <div class="lang-btn" data-lang="Bengali" onclick="selectLang(this)">
+                        <span class="flag">🇮🇳</span> বাংলা
+                    </div>
+                    <div class="lang-btn" data-lang="Odia" onclick="selectLang(this)">
+                        <span class="flag">🇮🇳</span> ଓଡ଼ିଆ
+                    </div>
+                </div>
+                <button class="btn-start-chat" onclick="startTriageChat()">
+                    <i class="fas fa-comments me-2"></i> Start Consultation
+                </button>
+            </div>
+
+            <!-- Step 2: Chat Interface -->
+            <div id="chat-interface" class="chat-wrapper section-hidden">
+                <div class="chat-header">
+                    <div class="ai-info">
+                        <div style="position:relative;">
+                            <div class="ai-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="online-dot"></div>
+                        </div>
+                        <div>
+                            <div style="font-weight:700; font-size:0.95rem;">MedAI Assistant</div>
+                            <div style="font-size:0.75rem; color:var(--muted);">Online · AI Health Triage</div>
+                        </div>
+                    </div>
+                    <span class="lang-badge" id="activeLangBadge">🇬🇧 English</span>
+                </div>
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input-area" style="flex-wrap: wrap;">
+                    <div id="imagePreviewContainer" class="w-100 section-hidden mb-2">
+                        <div style="position:relative; display:inline-block;">
+                            <img id="chatImagePreview" src="" alt="preview" style="height:60px; border-radius:8px; border:1px solid var(--border);">
+                            <button class="btn btn-sm btn-danger rounded-circle" style="position:absolute; top:-8px; right:-8px; padding:2px 6px; font-size:10px;" onclick="clearImagePreview()"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger shadow-sm me-2" style="border-radius:12px; height:44px; display:flex; align-items:center;" onclick="triggerEmergency()">
+                        <i class="fas fa-ambulance"></i><span class="d-none d-md-inline ms-2">Emergency</span>
+                    </button>
+                    <textarea class="chat-input" id="chatInput" rows="1" placeholder="Type your symptoms here..." onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+                    
+                    <label class="btn-send bg-secondary ms-2 mb-0 shadow-sm" style="cursor:pointer;" title="Upload Image">
+                        <i class="fas fa-camera"></i>
+                        <input type="file" id="chatImageUpload" accept="image/*" style="display:none;" onchange="previewChatImage(event)">
+                    </label>
+
+                    <button class="btn-send ms-2 shadow-sm" id="sendBtn" onclick="sendChatMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Results -->
+            <div id="result-section" class="result-section section-hidden" style="margin-top: 20px;">
+                <div class="card-box">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h3 style="font-weight:700;"><i class="fas fa-file-medical me-2 text-primary"></i>Your Medical Report</h3>
+                        <span id="severityBadge" class="severity-badge"></span>
+                    </div>
+
+                    <!-- Doctor Contact Card (Moderate/Critical) -->
+                    <div id="doctorContactCard" class="doctor-contact-card section-hidden mb-4">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:52px;height:52px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0" id="doctorName">Dr. —</h4>
+                                <small id="doctorSpec" style="color:var(--muted);font-weight:500;"></small>
+                            </div>
+                        </div>
+                        <p style="color:#78350f; font-size:0.875rem; margin-bottom:0;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Based on your symptoms, we've identified a specialist for you. You can contact the doctor directly below.
+                        </p>
+                        <div class="contact-btns">
+                            <a id="callBtn" href="#" class="btn-call">
+                                <i class="fas fa-phone-alt"></i> Call Doctor
+                            </a>
+                            <a id="videoBtn" href="#" target="_blank" class="btn-video">
+                                <i class="fas fa-video"></i> Video Consult
+                            </a>
+                            <a id="emailBtn" href="#" class="btn-email">
+                                <i class="fas fa-envelope"></i> Send Email
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- AI Advice (Normal) -->
+                    <div id="aiAdviceCard" class="section-hidden mb-4">
+                        <h5 style="font-weight:700; color:var(--success);"><i class="fas fa-shield-heart me-2"></i>AI Health Guidance</h5>
+                        <div id="aiAdviceText" class="report-card" style="border-left-color: var(--success); background: #f0fdf4;"></div>
+                    </div>
+
+                    <!-- Full Report -->
+                    <div>
+                        <h5 style="font-weight:700; margin-bottom:12px;"><i class="fas fa-notes-medical me-2 text-primary"></i>Clinical Report</h5>
+                        <div id="fullReportText" class="report-card"></div>
+                    </div>
+
+                    <!-- Audio -->
+                    <div id="audioSection" class="section-hidden" style="margin-top:20px;">
+                        <h6 style="font-weight:600; margin-bottom:8px;"><i class="fas fa-volume-up me-2 text-primary"></i>Audio Summary</h6>
+                        <audio id="audioPlayer" class="audio-player" controls></audio>
+                    </div>
+
+                    <div style="margin-top:20px; display:flex; gap:10px;">
+                        <button class="new-chat-btn" onclick="resetToLanguageSelect()">
+                            <i class="fas fa-plus"></i> New Consultation
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- end #section-triage -->
+
+        <!-- ── HISTORY SECTION ── -->
+        <div id="section-history" class="section-hidden">
+            <div class="card-box">
+                <h3 style="font-weight:700; margin-bottom:20px;"><i class="fas fa-history me-2 text-primary"></i>Medical History</h3>
+                <div id="historyList">
+                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── APPOINTMENTS SECTION ── -->
+        <div id="section-appointments" class="section-hidden">
+            <div class="card-box">
+                <h3 style="font-weight:700; margin-bottom:20px;"><i class="fas fa-calendar-check me-2 text-primary"></i>My Appointments</h3>
+                <div id="appointmentsList">
+                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── DOCTORS SECTION ── -->
+        <div id="section-doctors" class="section-hidden">
+            <div class="card-box">
+                <h3 style="font-weight:700; margin-bottom:20px;"><i class="fas fa-user-md me-2 text-primary"></i>Available Doctors</h3>
+                <div id="doctorsList">
+                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- end .content-area -->
+</div>
+
+<!-- Booking Modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-calendar-plus me-2"></i>Book Appointment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Booking with: <strong id="bookingDoctorName"></strong></p>
+        <input type="hidden" id="bookingDoctorId">
+        <div class="mb-3">
+            <label class="form-label text-muted fw-bold">Select Date & Time</label>
+            <input type="datetime-local" class="form-control" id="bookingDateTime" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="submitBooking()" id="submitBookingBtn">Confirm Booking</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+// ═════════════════════════════════
+//  STATE
+// ═════════════════════════════════
+const token = localStorage.getItem('access_token');
+if (!token) window.location.href = '/login/patient';
+
+let selectedLanguage = 'English';
+let sessionId = null;
+let isBotTyping = false;
+let chatImageBase64 = null;
+
+// ═════════════════════════════════
+//  SECTION NAVIGATION
+// ═════════════════════════════════
+const sectionTitles = {
+    triage: '<i class="fas fa-comments me-2 text-primary"></i>AI Consultation',
+    history: '<i class="fas fa-history me-2 text-primary"></i>Medical History',
+    appointments: '<i class="fas fa-calendar-check me-2 text-primary"></i>Appointments',
+    doctors: '<i class="fas fa-user-md me-2 text-primary"></i>Available Doctors'
+};
+
+function showSection(name) {
+    ['triage','history','appointments','doctors'].forEach(s => {
+        const sec = document.getElementById(`section-${s}`);
+        if(sec) sec.classList.add('section-hidden');
+        const nav = document.getElementById(`nav-${s}`);
+        if(nav) nav.classList.remove('active');
+    });
+    
+    const secTarget = document.getElementById(`section-${name}`);
+    if(secTarget) secTarget.classList.remove('section-hidden');
+    const navTarget = document.getElementById(`nav-${name}`);
+    if(navTarget) navTarget.classList.add('active');
+    
+    document.getElementById('sectionTitle').innerHTML = sectionTitles[name];
+    document.getElementById('newChatBtn').style.display = (name === 'triage') ? 'flex' : 'none';
+
+    if (name === 'history') loadHistory();
+    if (name === 'appointments') loadAppointments();
+    if (name === 'doctors') loadDoctors();
+}
+
+// ═════════════════════════════════
+//  LANGUAGE SELECTION
+// ═════════════════════════════════
+const langFlags = {
+    'English': '🇬🇧', 'Hindi': '🇮🇳', 'Telugu': '🇮🇳',
+    'Marathi': '🇮🇳', 'Tamil': '🇮🇳', 'Bengali': '🇮🇳', 'Odia': '🇮🇳'
+};
+
+function selectLang(el) {
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedLanguage = el.dataset.lang;
+}
+
+async function startTriageChat() {
+    document.getElementById('lang-setup').classList.add('section-hidden');
+    document.getElementById('chat-interface').classList.remove('section-hidden');
+    document.getElementById('newChatBtn').style.display = 'flex';
+
+    // Update language badge
+    document.getElementById('activeLangBadge').textContent = `${langFlags[selectedLanguage] || '🌐'} ${selectedLanguage}`;
+
+    // Start session
+    const res = await apiCall('/patient/triage/start', 'POST', { language: selectedLanguage });
+    if (res && res.session_id) {
+        sessionId = res.session_id;
+        appendMessage('ai', res.message);
+    }
+    document.getElementById('chatInput').focus();
+}
+
+// ═════════════════════════════════
+//  CHAT
+// ═════════════════════════════════
+function appendMessage(role, text, isHtml=false) {
+    const container = document.getElementById('chatMessages');
+    const row = document.createElement('div');
+    row.className = `msg-row ${role}`;
+    const avatarHtml = role === 'ai'
+        ? `<div class="msg-avatar ai"><i class="fas fa-robot"></i></div>`
+        : `<div class="msg-avatar user">You</div>`;
+    const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    row.innerHTML = `
+        ${avatarHtml}
+        <div>
+            <div class="bubble ${role}">${isHtml ? text : escHtml(text)}</div>
+            <div class="bubble-time">${time}</div>
+        </div>`;
+    container.appendChild(row);
+    container.scrollTop = container.scrollHeight;
+}
+
+function previewChatImage(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('chatImagePreview').src = e.target.result;
+        document.getElementById('imagePreviewContainer').classList.remove('section-hidden');
+        chatImageBase64 = e.target.result.split(',')[1];
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearImagePreview() {
+    document.getElementById('chatImagePreview').src = '';
+    document.getElementById('imagePreviewContainer').classList.add('section-hidden');
+    document.getElementById('chatImageUpload').value = '';
+    chatImageBase64 = null;
+}
+
+function showTyping() {
+    const container = document.getElementById('chatMessages');
+    const el = document.createElement('div');
+    el.className = 'msg-row ai'; el.id = 'typingIndicator';
+    el.innerHTML = `<div class="msg-avatar ai"><i class="fas fa-robot"></i></div>
+        <div class="typing-bubble"><span></span><span></span><span></span></div>`;
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+}
+
+function removeTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+}
+
+async function sendChatMessage() {
+    if (isBotTyping) return;
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg && !chatImageBase64) return;
+    if (!sessionId) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    
+    let visualMsg = msg;
+    if(chatImageBase64) {
+        visualMsg = `<img src="data:image/jpeg;base64,${chatImageBase64}" style="max-height:100px; border-radius:8px; display:block; margin-bottom:8px; border:2px solid rgba(255,255,255,0.2);">` + escHtml(msg);
+        appendMessage('user', visualMsg, true);
+    } else {
+        appendMessage('user', msg);
+    }
+
+    input.disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    isBotTyping = true;
+    showTyping();
+
+    const payload = { session_id: sessionId, message: msg };
+    if(chatImageBase64) {
+        payload.image = chatImageBase64;
+    }
+    
+    clearImagePreview();
+
+    const res = await apiCall('/patient/triage/message', 'POST', payload);
+    removeTyping();
+    isBotTyping = false;
+    input.disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+
+    if (res) {
+        appendMessage('ai', res.message);
+        if (res.is_complete) {
+            // Show generating report message
+            appendMessage('ai', '⏳ Generating your medical report, please wait...');
+            input.disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            await generateReport();
+        }
+    }
+}
+
+async function triggerEmergency() {
+    if(!sessionId) {
+        alert("Please select a language and start the consultation first so we can assist you.");
+        return;
+    }
+    if(!confirm("Are you experiencing a severe medical emergency? Click OK to get connected to a doctor instantly.")) return;
+    
+    document.getElementById('chatInput').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    showTyping();
+    
+    const res = await apiCall('/patient/triage/emergency', 'POST', { session_id: sessionId });
+    removeTyping();
+    
+    if(res) {
+        document.getElementById('chat-interface').classList.add('section-hidden');
+        const resultSec = document.getElementById('result-section');
+        resultSec.classList.remove('section-hidden');
+        
+        const badge = document.getElementById('severityBadge');
+        badge.textContent = res.severity || 'Critical';
+        badge.className = 'severity-badge severity-critical';
+        
+        document.getElementById('fullReportText').innerHTML = `<h5 class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i> EMERGENCY PROTOCOL ACTIVATED</h5><p>You have triggered the emergency response system. Medical details will be collected post-consultation. Please contact the doctor immediately using the buttons below or dial your local emergency services.</p>`;
+        
+        if (res.doctor) {
+            const d = res.doctor;
+            document.getElementById('doctorContactCard').classList.remove('section-hidden');
+            document.getElementById('doctorName').textContent = `Dr. ${d.name}`;
+            document.getElementById('doctorSpec').textContent = d.specialization;
+            document.getElementById('callBtn').href = `tel:${d.phone}`;
+            document.getElementById('videoBtn').href = d.video_url;
+            document.getElementById('emailBtn').href = `mailto:${d.email}`;
+        }
+    }
+}
+
+async function generateReport() {
+    const res = await apiCall('/patient/triage/finalize', 'POST', { session_id: sessionId });
+    if (!res) return;
+
+    // Hide chat, show result
+    document.getElementById('chat-interface').classList.add('section-hidden');
+    const resultSec = document.getElementById('result-section');
+    resultSec.classList.remove('section-hidden');
+
+    // Severity badge
+    const badge = document.getElementById('severityBadge');
+    badge.textContent = res.severity;
+    badge.className = 'severity-badge severity-' + (res.severity || '').toLowerCase();
+
+    // Full clinical report
+    document.getElementById('fullReportText').textContent = res.ai_report || 'Report generation complete.';
+
+    // Doctor contact card (Moderate / Critical)
+    if (res.doctor) {
+        const d = res.doctor;
+        document.getElementById('doctorContactCard').classList.remove('section-hidden');
+        document.getElementById('doctorName').textContent = `Dr. ${d.name}`;
+        document.getElementById('doctorSpec').textContent = d.specialization;
+        document.getElementById('callBtn').href = `tel:${d.phone}`;
+        document.getElementById('videoBtn').href = d.video_url;
+        document.getElementById('emailBtn').href = `mailto:${d.email}`;
+    }
+
+    // AI advice card (Normal)
+    if (res.ai_advice) {
+        document.getElementById('aiAdviceCard').classList.remove('section-hidden');
+        document.getElementById('aiAdviceText').textContent = res.ai_advice;
+    }
+
+    // Audio
+    if (res.audio_file) {
+        document.getElementById('audioSection').classList.remove('section-hidden');
+        document.getElementById('audioPlayer').src = `/static/uploads/${res.audio_file}`;
+    }
+}
+
+function handleChatKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+    }
+}
+
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function resetToLanguageSelect() {
+    sessionId = null;
+    document.getElementById('chatMessages').innerHTML = '';
+    document.getElementById('chat-interface').classList.add('section-hidden');
+    document.getElementById('result-section').classList.add('section-hidden');
+    document.getElementById('doctorContactCard').classList.add('section-hidden');
+    document.getElementById('aiAdviceCard').classList.add('section-hidden');
+    document.getElementById('audioSection').classList.add('section-hidden');
+    document.getElementById('lang-setup').classList.remove('section-hidden');
+    document.getElementById('chatInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    // reset language
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelector('[data-lang="English"]').classList.add('selected');
+    selectedLanguage = 'English';
+}
+
+// ═════════════════════════════════
+//  HISTORY
+// ═════════════════════════════════
+async function loadHistory() {
+    const data = await apiCall('/patient/history', 'GET');
+    const el = document.getElementById('historyList');
+    if (!data || data.length === 0) { el.innerHTML = '<p class="text-muted text-center py-4">No reports yet.</p>'; return; }
+    el.innerHTML = data.map(r => `
+        <div class="report-history-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>Report #${r.report_id}</strong>
+                    <div class="text-muted" style="font-size:0.8rem;">${r.date}</div>
+                </div>
+                <span class="severity-badge severity-${(r.severity||'').toLowerCase()}">${r.severity||'—'}</span>
+            </div>
+            <p style="margin:10px 0 8px; font-size:0.875rem;">${escHtml(r.symptoms?.substring(0,100))}...</p>
+            ${r.doctor_response ? `<div style="background:#f0fdf4;border-radius:8px;padding:10px;font-size:0.82rem;color:#15803d;"><i class="fas fa-stethoscope me-1"></i>${escHtml(r.doctor_response?.substring(0,150))}...</div>` : ''}
+            <span class="badge ${r.status==='reviewed'?'bg-success':'bg-warning text-dark'} mt-2">${r.status}</span>
+        </div>`).join('');
+}
+
+// ═════════════════════════════════
+//  APPOINTMENTS
+// ═════════════════════════════════
+async function loadAppointments() {
+    const data = await apiCall('/patient/appointments', 'GET');
+    const el = document.getElementById('appointmentsList');
+    if (!data || data.length === 0) { el.innerHTML = '<p class="text-muted text-center py-4">No appointments yet.</p>'; return; }
+    el.innerHTML = data.map(a => `
+        <div class="report-history-card">
+            <div class="d-flex justify-content-between">
+                <div><strong>${escHtml(a.doctor_name)}</strong><div class="text-muted" style="font-size:0.8rem;">${new Date(a.date).toLocaleString()}</div></div>
+                <span class="badge ${a.status==='confirmed'?'bg-success':a.status==='cancelled'?'bg-danger':'bg-warning text-dark'}">${a.status}</span>
+            </div>
+        </div>`).join('');
+}
+
+// ═════════════════════════════════
+//  DOCTORS
+// ═════════════════════════════════
+let bookingModalInstance = null;
+function openBookingModal(doctorId, doctorName) {
+    document.getElementById('bookingDoctorId').value = doctorId;
+    document.getElementById('bookingDoctorName').textContent = 'Dr. ' + doctorName;
+    document.getElementById('bookingDateTime').value = '';
+    
+    if (!bookingModalInstance) {
+        bookingModalInstance = new bootstrap.Modal(document.getElementById('bookingModal'));
+    }
+    bookingModalInstance.show();
+}
+
+async function submitBooking() {
+    const doctorId = document.getElementById('bookingDoctorId').value;
+    const dateTimeVal = document.getElementById('bookingDateTime').value;
+    
+    if (!dateTimeVal) {
+        alert("Please select a date and time.");
+        return;
+    }
+    
+    const btn = document.getElementById('submitBookingBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
+    btn.disabled = true;
+    
+    let isoDate = dateTimeVal;
+    if (isoDate.length === 16) { isoDate += ':00'; } // Ensure seconds are present for ISO formats
+    
+    const res = await apiCall('/patient/appointments', 'POST', {
+        doctor_id: parseInt(doctorId),
+        appointment_date: isoDate
+    });
+    
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    
+    if (res) {
+        bookingModalInstance.hide();
+        loadAppointments();
+        showSection('appointments');
+    } else {
+        alert("Failed to book appointment. Please try again.");
+    }
+}
+
+async function loadDoctors() {
+    const data = await apiCall('/patient/doctors', 'GET');
+    const el = document.getElementById('doctorsList');
+    if (!data || data.length === 0) { el.innerHTML = '<p class="text-muted text-center py-4">No doctors available.</p>'; return; }
+    el.innerHTML = `<div class="row g-3">${data.map(d => `
+        <div class="col-md-4">
+            <div class="card-box" style="padding:16px;">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;"><i class="fas fa-user-md"></i></div>
+                    <div><div style="font-weight:700;">${escHtml(d.name)}</div><div style="font-size:0.78rem;color:var(--muted);">${escHtml(d.specialization)}</div></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-success">Available</span>
+                </div>
+                <button class="btn btn-sm btn-outline-primary w-100 fw-bold shadow-sm" style="border-radius:8px;" onclick="openBookingModal(${d.doctor_id}, '${escHtml(d.name).replace(/'/g,"\\'")}')">
+                    <i class="fas fa-calendar-plus me-1"></i> Book Appointment
+                </button>
+            </div>
+        </div>`).join('')}</div>`;
+}
+
+// ═════════════════════════════════
+//  API HELPER
+// ═════════════════════════════════
+async function apiCall(url, method='GET', body=null) {
+    try {
+        const opts = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(url, opts);
+        if (res.status === 401) { logout(); return null; }
+        return await res.json();
+    } catch(e) { console.error(e); return null; }
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function logout() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('role');
+    window.location.href = '/login';
+}
+
+// Init
+document.getElementById('newChatBtn').style.display = 'flex';
+
+window.addEventListener('load', () => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash && ['triage', 'history', 'appointments', 'doctors'].includes(hash)) {
+        showSection(hash);
+    }
+});
+</script>
+</body>
+</html>

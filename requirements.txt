@@ -1,0 +1,17 @@
+Flask
+Flask-SQLAlchemy
+Flask-Bcrypt
+Flask-JWT-Extended
+Flask-CORS
+Flask-Migrate
+python-dotenv
+reportlab
+Pillow
+psycopg2-binary
+groq
+gtts
+gunicorn
+waitress
+pytest
+Flask-SocketIO
+eventlet
