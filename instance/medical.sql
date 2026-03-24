@@ -1,8 +1,8 @@
 -- Medical AI Assistant MySQL Database Schema
 -- Run this entire script in your MySQL Workbench or phpMyAdmin
 
-CREATE DATABASE IF NOT EXISTS medical_ai;
-USE medical_ai;
+--CREATE DATABASE IF NOT EXISTS medical_ai;
+--USE medical_ai;
 
 -- 1. Patients Table
 CREATE TABLE IF NOT EXISTS patients (
