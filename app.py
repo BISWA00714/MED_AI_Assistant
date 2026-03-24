@@ -1,12 +1,12 @@
 from flask import Flask, jsonify, request, render_template, send_file
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import os
 from werkzeug.utils import secure_filename
 from datetime import timedelta
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
 from config import Config
@@ -15,17 +15,21 @@ from routes.auth import auth_bp
 from routes.admin import admin_bp
 from routes.patient import patient_bp
 from routes.doctor import doctor_bp
+from sockets import socketio
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Initialize extensions
 db.init_app(app)
 bcrypt.init_app(app)
 jwt = JWTManager(app)
 CORS(app)
-
-from sockets import socketio
 socketio.init_app(app)
+
+# 🔥 IMPORTANT FIX: Create tables on app startup (WORKS ON RAILWAY)
+with app.app_context():
+    db.create_all()
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -33,6 +37,7 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(patient_bp, url_prefix='/patient')
 app.register_blueprint(doctor_bp, url_prefix='/doctor')
 
+# Routes
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -81,8 +86,8 @@ def appointment_page():
 def find_doctors_page():
     return render_template('find_doctors.html')
 
+
+# 🚀 Run server (for local only, Railway uses gunicorn)
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    # Use socketio.run instead of app.run to enable WebSocket support during local development
-    socketio.run(app, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port, debug=True)
