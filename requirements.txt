@@ -15,3 +15,4 @@ waitress
 pytest
 Flask-SocketIO
 eventlet
+pymysql
