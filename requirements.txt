@@ -16,3 +16,4 @@ pytest
 Flask-SocketIO
 eventlet
 pymysql
+cryptography
